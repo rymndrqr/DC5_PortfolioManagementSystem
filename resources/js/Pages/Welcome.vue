@@ -3,7 +3,10 @@ import { Head, Link } from '@inertiajs/vue3'
 </script>
 
 <template>
-    <Head title="Portfolio" />
+    <Head title="Portfolio">
+        <meta name="description" content="Portfolio management system built with Laravel 12, Vue 3, and Inertia.js. Manage projects, achievements, skills, and publish a public portfolio." />
+        <meta name="keywords" content="Laravel 12, Vue 3, Inertia, Portfolio, CMS, Projects, Achievements, Skills" />
+    </Head>
 
     <div class="min-h-screen bg-zinc-950 text-white" style="font-family: 'Georgia', serif;">
 

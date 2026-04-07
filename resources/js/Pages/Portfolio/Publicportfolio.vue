@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({
     projects: Array,
@@ -10,19 +11,24 @@ const props = defineProps({
 
 const activeSection = ref('projects')
 const activeFilter = ref('All')
+const apiStatus = ref('idle')
+const apiMessage = ref('')
+const remoteProjects = ref(props.projects)
+const remoteAchievements = ref(props.achievements)
+const remoteSkills = ref(props.skills)
 
 const categories = computed(() => {
-    const cats = [...new Set(props.projects.map((project) => project.category))]
+    const cats = [...new Set(remoteProjects.value.map((project) => project.category))]
     return ['All', ...cats]
 })
 
 const filteredProjects = computed(() => {
-    if (activeFilter.value === 'All') return props.projects
-    return props.projects.filter((project) => project.category === activeFilter.value)
+    if (activeFilter.value === 'All') return remoteProjects.value
+    return remoteProjects.value.filter((project) => project.category === activeFilter.value)
 })
 
 const skillsByCategory = computed(() => {
-    return props.skills.reduce((groups, skill) => {
+    return remoteSkills.value.reduce((groups, skill) => {
         if (!groups[skill.category]) groups[skill.category] = []
         groups[skill.category].push(skill)
         return groups
@@ -39,11 +45,35 @@ const formatDate = (value) => {
     if (!value) return null
     return new Date(value).toLocaleDateString('en-PH', { year: 'numeric', month: 'short' })
 }
+
+const loadPublicApi = async () => {
+    apiStatus.value = 'loading'
+    try {
+        const [projectsRes, achievementsRes, skillsRes] = await Promise.all([
+            axios.get('/api/projects'),
+            axios.get('/api/achievements'),
+            axios.get('/api/skills'),
+        ])
+
+        remoteProjects.value = projectsRes.data.data
+        remoteAchievements.value = achievementsRes.data.data
+        remoteSkills.value = skillsRes.data.data
+        apiStatus.value = 'success'
+    } catch (error) {
+        apiStatus.value = 'error'
+        apiMessage.value = error.response?.data?.message || error.message
+    }
+}
+
+onMounted(loadPublicApi)
 </script>
 
 <template>
     <div class="min-h-screen bg-zinc-950 text-white">
-        <Head title="Portfolio" />
+        <Head title="Portfolio">
+            <meta name="description" content="Public portfolio page showing projects, achievements, and skills from a Laravel + Vue + Inertia application." />
+            <meta name="keywords" content="portfolio, projects, achievements, skills, Laravel, Vue, Inertia" />
+        </Head>
 
         <div class="max-w-6xl mx-auto px-6 py-10">
             <div class="mb-10 space-y-4">
@@ -70,15 +100,15 @@ const formatDate = (value) => {
 
                     <div class="mt-6 grid gap-4 sm:grid-cols-3">
                         <div class="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 text-center">
-                            <p class="text-3xl font-semibold text-white">{{ props.projects.length }}</p>
+                            <p class="text-3xl font-semibold text-white">{{ remoteProjects.length }}</p>
                             <p class="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-500">Projects</p>
                         </div>
                         <div class="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 text-center">
-                            <p class="text-3xl font-semibold text-white">{{ props.achievements.length }}</p>
+                            <p class="text-3xl font-semibold text-white">{{ remoteAchievements.length }}</p>
                             <p class="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-500">Achievements</p>
                         </div>
                         <div class="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 text-center">
-                            <p class="text-3xl font-semibold text-white">{{ props.skills.length }}</p>
+                            <p class="text-3xl font-semibold text-white">{{ remoteSkills.length }}</p>
                             <p class="mt-2 text-xs uppercase tracking-[0.18em] text-zinc-500">Skills</p>
                         </div>
                     </div>
@@ -96,6 +126,11 @@ const formatDate = (value) => {
                     <div class="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
                         <p class="text-xs uppercase tracking-[0.3em] text-zinc-500">About</p>
                         <p class="mt-3 text-sm leading-6 text-zinc-400">A modern portfolio page mirrors the admin UI while staying accessible and focused on content.</p>
+                    </div>
+                    <div class="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+                        <p class="text-xs uppercase tracking-[0.3em] text-zinc-500">API status</p>
+                        <p class="mt-3 text-sm leading-6 text-zinc-400">Live data is loaded from the public JSON API via Axios.</p>
+                        <p class="mt-4 text-sm uppercase tracking-[0.3em] text-amber-300">{{ apiStatus === 'loading' ? 'Loading…' : apiStatus === 'success' ? 'Synchronized' : apiStatus === 'error' ? `Error: ${apiMessage}` : 'Idle' }}</p>
                     </div>
                 </aside>
             </div>
@@ -148,8 +183,8 @@ const formatDate = (value) => {
                     <p class="text-xs uppercase tracking-[0.3em] text-zinc-500">Achievements</p>
                     <h2 class="mt-3 text-3xl font-semibold text-white">Certifications & awards</h2>
                 </div>
-                <div v-if="props.achievements.length > 0" class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div v-for="achievement in props.achievements" :key="achievement.id" class="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+                <div v-if="remoteAchievements.length > 0" class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div v-for="achievement in remoteAchievements" :key="achievement.id" class="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
                         <div class="flex items-center justify-between gap-4 mb-4">
                             <p class="text-xs uppercase tracking-[0.3em] text-zinc-500">{{ achievement.type_label }}</p>
                             <span class="text-xs text-zinc-400">{{ formatDate(achievement.date_received) }}</span>

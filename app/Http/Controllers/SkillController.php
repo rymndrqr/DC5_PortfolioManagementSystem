@@ -69,4 +69,17 @@ class SkillController extends Controller
         return redirect()->route('skills.index')
             ->with('success', 'Skill deleted successfully.');
     }
+
+    public function publicApi()
+    {
+        $skills = Skill::orderBy('category')
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $skills,
+            'count'   => $skills->count(),
+        ]);
+    }
 }

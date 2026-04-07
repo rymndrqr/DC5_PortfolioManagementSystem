@@ -98,4 +98,18 @@ class AchievementController extends Controller
         return redirect()->route('achievements.index')
             ->with('success', 'Achievement deleted successfully.');
     }
+
+    public function publicApi()
+    {
+        $achievements = Achievement::orderByDesc('featured')
+            ->orderByDesc('date_received')
+            ->get()
+            ->append(['image_url', 'type_label']);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $achievements,
+            'count'   => $achievements->count(),
+        ]);
+    }
 }

@@ -41,6 +41,8 @@ Route::get('/portfolio', function () {
 
 // Public JSON APIs
 Route::get('/api/projects',      [ProjectController::class, 'publicApi'])->name('api.projects');
+Route::get('/api/achievements',  [AchievementController::class, 'publicApi'])->name('api.achievements');
+Route::get('/api/skills',        [SkillController::class, 'publicApi'])->name('api.skills');
 
 /*
 |--------------------------------------------------------------------------
